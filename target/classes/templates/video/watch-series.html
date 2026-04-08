@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${video.title + ' – AnimeVault'}">Watch – AnimeVault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+<div th:replace="~{fragments/layout :: flash-messages}"></div>
+
+<div class="watch-layout">
+    <!-- Main content -->
+    <div class="watch-main">
+
+        <!-- Video Player -->
+        <div class="video-player-wrap">
+            <video th:if="${currentEpisode != null and currentEpisode.videoUrl != null}"
+                   class="video-player"
+                   controls
+                   preload="metadata"
+                   th:poster="${currentEpisode.thumbnailUrl != null} ? ${currentEpisode.thumbnailUrl} : ${video.thumbnailUrl}">
+                <source th:src="${currentEpisode.videoUrl}" type="video/mp4"/>
+                <source th:src="${currentEpisode.videoUrl}" type="video/webm"/>
+                Your browser does not support HTML5 video.
+            </video>
+            <div th:unless="${currentEpisode != null and currentEpisode.videoUrl != null}"
+                 class="video-no-src">
+                <span>📺</span>
+                <p th:if="${seasons == null or seasons.empty}">No seasons uploaded yet.</p>
+                <p th:unless="${seasons == null or seasons.empty}">Select an episode to watch.</p>
+                <a sec:authorize="hasRole('ADMIN')"
+                   th:href="@{/admin/series/{id}/seasons(id=${video.id})}"
+                   class="btn btn-admin">+ Add Seasons</a>
+            </div>
+        </div>
+
+        <!-- Episode Title -->
+        <div class="watch-info" th:if="${currentEpisode != null}">
+            <div class="watch-info-top">
+                <div>
+                    <div class="watch-type-badge series">SERIES</div>
+                    <h1 class="watch-title">
+                        <span th:text="${video.title}">Title</span>
+                        <span class="ep-label"
+                              th:text="${'S' + currentSeason.seasonNumber + ' E' + currentEpisode.episodeNumber}">S1 E1</span>
+                    </h1>
+                    <h2 class="ep-title" th:text="${currentEpisode.title}">Episode Title</h2>
+                    <div class="watch-meta">
+                        <span th:if="${currentEpisode.rating != null}" class="watch-rating">
+                            ★ <span th:text="${#numbers.formatDecimal(currentEpisode.rating,1,1)}">8.5</span>/10
+                        </span>
+                        <span th:if="${currentEpisode.durationMinutes != null}"
+                              th:text="${currentEpisode.durationMinutes + ' min'}"></span>
+                    </div>
+                </div>
+                <div sec:authorize="hasRole('ADMIN')" class="admin-controls">
+                    <a th:href="@{/admin/edit/{id}(id=${video.id})}" class="btn btn-admin btn-sm">✎ Edit Series</a>
+                    <a th:href="@{/admin/series/{id}/seasons(id=${video.id})}" class="btn btn-admin btn-sm">⚙ Manage</a>
+                </div>
+            </div>
+            <div class="watch-genres" th:if="${video.genres != null and !video.genres.empty}">
+                <span th:each="g : ${video.getGenreArray()}"
+                      th:text="${g.trim()}" class="genre-tag"></span>
+            </div>
+            <p class="watch-desc" th:if="${currentEpisode.description}" th:text="${currentEpisode.description}"></p>
+        </div>
+
+        <!-- Series Info (when no episode selected) -->
+        <div class="watch-info" th:unless="${currentEpisode != null}">
+            <div class="watch-info-top">
+                <div>
+                    <div class="watch-type-badge series">SERIES</div>
+                    <h1 class="watch-title" th:text="${video.title}">Title</h1>
+                    <div class="watch-meta">
+                        <span th:if="${video.rating != null}" class="watch-rating">
+                            ★ <span th:text="${#numbers.formatDecimal(video.rating,1,1)}">8.5</span>/10
+                        </span>
+                        <span th:if="${video.releaseYear}" th:text="${video.releaseYear}"></span>
+                        <span th:if="${video.status}" th:text="${video.status}" class="status-badge"></span>
+                    </div>
+                </div>
+                <div sec:authorize="hasRole('ADMIN')" class="admin-controls">
+                    <a th:href="@{/admin/edit/{id}(id=${video.id})}" class="btn btn-admin btn-sm">✎ Edit</a>
+                    <a th:href="@{/admin/series/{id}/seasons(id=${video.id})}" class="btn btn-admin btn-sm">⚙ Manage</a>
+                </div>
+            </div>
+            <div class="watch-genres" th:if="${video.genres != null and !video.genres.empty}">
+                <span th:each="g : ${video.getGenreArray()}"
+                      th:text="${g.trim()}" class="genre-tag"></span>
+            </div>
+            <p class="watch-desc" th:if="${video.description}" th:text="${video.description}"></p>
+        </div>
+
+        <!-- Episode Selector -->
+        <div class="episodes-section" th:unless="${seasons == null or seasons.empty}">
+            <h2 class="episodes-title">Episodes</h2>
+
+            <!-- Season tabs -->
+            <div class="season-tabs">
+                <button th:each="s : ${seasons}"
+                        th:text="${'Season ' + s.seasonNumber}"
+                        th:class="${currentSeason != null and s.id == currentSeason.id} ? 'season-tab active' : 'season-tab'"
+                        th:data-season="${s.id}"
+                        onclick="switchSeason(this)">
+                    Season 1
+                </button>
+            </div>
+
+            <!-- Episode lists (one per season, toggled via JS) -->
+            <div th:each="s : ${seasons}"
+                 th:id="${'season-panel-' + s.id}"
+                 th:class="${currentSeason != null and s.id == currentSeason.id} ? 'season-panel active' : 'season-panel'">
+                <div th:if="${s.episodes == null or s.episodes.empty}" class="no-episodes">
+                    <p>No episodes uploaded for this season yet.</p>
+                    <a sec:authorize="hasRole('ADMIN')"
+                       th:href="@{/admin/seasons/{id}/episodes(id=${s.id})}"
+                       class="btn btn-admin btn-sm">+ Add Episodes</a>
+                </div>
+                <div class="episode-list" th:unless="${s.episodes == null or s.episodes.empty}">
+                    <a th:each="ep : ${s.episodes}"
+                       th:href="@{/watch/series/{vid}/season/{sid}/episode/{eid}(vid=${video.id},sid=${s.id},eid=${ep.id})}"
+                       th:class="${currentEpisode != null and ep.id == currentEpisode.id} ? 'episode-item active' : 'episode-item'">
+                        <div class="ep-thumb">
+                            <img th:if="${ep.thumbnailUrl != null and !ep.thumbnailUrl.empty}"
+                                 th:src="${ep.thumbnailUrl}" th:alt="${ep.title}"
+                                 onerror="this.style.display='none'"/>
+                            <div class="ep-num" th:text="${ep.episodeNumber}">1</div>
+                        </div>
+                        <div class="ep-info">
+                            <span class="ep-n" th:text="${'Episode ' + ep.episodeNumber}">Episode 1</span>
+                            <span class="ep-t" th:text="${ep.title}">Title</span>
+                            <span th:if="${ep.durationMinutes}" class="ep-dur"
+                                  th:text="${ep.durationMinutes + ' min'}"></span>
+                        </div>
+                        <div th:if="${ep.rating != null}" class="ep-rating">
+                            ★ <span th:text="${#numbers.formatDecimal(ep.rating,1,1)}">8</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comments -->
+        <div class="comments-section">
+            <h2 class="comments-title">
+                Comments
+                <span class="comment-count" th:text="${'(' + commentCount + ')'}"></span>
+            </h2>
+            <form th:action="@{/comments/post}" method="post" class="comment-form">
+                <input type="hidden" name="videoId" th:value="${video.id}"/>
+                <input type="hidden" name="redirectUrl"
+                       th:value="${currentEpisode != null} ?
+                           ${'/watch/series/' + video.id + '/season/' + currentSeason.id + '/episode/' + currentEpisode.id} :
+                           ${'/watch/series/' + video.id}"/>
+                <div class="comment-input-wrap">
+                    <textarea name="content" placeholder="Share your thoughts…"
+                              maxlength="2000" class="comment-textarea" rows="3" required></textarea>
+                    <button type="submit" class="btn btn-primary comment-submit">Post</button>
+                </div>
+                <p th:unless="${loggedIn}" class="comment-anon-note">
+                    💬 Posting as <strong>Anonymous</strong>.
+                    <a th:href="@{/auth/login}">Login</a> to post with your username.
+                </p>
+            </form>
+            <div class="comment-list">
+                <div th:each="c : ${comments}" class="comment-item">
+                    <div class="comment-avatar" th:text="${c.displayName.substring(0,1).toUpperCase()}">A</div>
+                    <div class="comment-body">
+                        <div class="comment-header">
+                            <span class="comment-author" th:text="${c.displayName}">User</span>
+                            <span class="comment-time"
+                                  th:text="${#temporals.format(c.timestamp, 'MMM dd, yyyy')}">Date</span>
+                            <form sec:authorize="hasRole('ADMIN')"
+                                  th:action="@{/admin/comments/delete/{id}(id=${c.id})}" method="post"
+                                  style="display:inline;">
+                                <input type="hidden" name="redirectUrl"
+                                       th:value="${'/watch/series/' + video.id}"/>
+                                <button type="submit" class="comment-delete-btn"
+                                        onclick="return confirm('Delete this comment?')">×</button>
+                            </form>
+                        </div>
+                        <p class="comment-content" th:text="${c.content}">Comment text</p>
+                    </div>
+                </div>
+                <div th:if="${comments.empty}" class="no-comments"><p>No comments yet. Be the first!</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="watch-sidebar">
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">Series Info</h3>
+            <div th:if="${video.thumbnailUrl != null and !video.thumbnailUrl.empty}" class="sidebar-thumb">
+                <img th:src="${video.thumbnailUrl}" th:alt="${video.title}"/>
+            </div>
+            <div class="info-list">
+                <div class="info-row" th:if="${video.studio}">
+                    <span class="info-label">Studio</span>
+                    <span class="info-value" th:text="${video.studio}"></span>
+                </div>
+                <div class="info-row" th:if="${video.releaseYear}">
+                    <span class="info-label">Year</span>
+                    <span class="info-value" th:text="${video.releaseYear}"></span>
+                </div>
+                <div class="info-row" th:if="${video.rating}">
+                    <span class="info-label">Rating</span>
+                    <span class="info-value">★ <span th:text="${#numbers.formatDecimal(video.rating,1,1)}"></span>/10</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Seasons</span>
+                    <span class="info-value" th:text="${seasons != null ? seasons.size() : 0}"></span>
+                </div>
+                <div class="info-row" th:if="${video.status}">
+                    <span class="info-label">Status</span>
+                    <span class="info-value" th:text="${video.status}"></span>
+                </div>
+            </div>
+            <p class="sidebar-desc" th:if="${video.description}"
+               th:text="${#strings.abbreviate(video.description, 200)}"></p>
+        </div>
+    </aside>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+<script>
+function switchSeason(btn) {
+    document.querySelectorAll('.season-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.season-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('season-panel-' + btn.dataset.season).classList.add('active');
+}
+</script>
+</body>
+</html>

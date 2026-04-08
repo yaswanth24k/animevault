@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${'Episodes – S' + season.seasonNumber + ' – AnimeVault'}">Episodes – AnimeVault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+<div th:replace="~{fragments/layout :: flash-messages}"></div>
+
+<div class="admin-layout">
+    <aside class="admin-sidebar">
+        <div class="admin-sidebar-header">
+            <span class="admin-sidebar-icon">⚔</span>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="admin-nav">
+            <a th:href="@{/admin/dashboard}" class="admin-nav-link">📊 Dashboard</a>
+            <a th:href="@{/admin/upload}" class="admin-nav-link">⬆ Upload Anime</a>
+            <a th:href="@{/browse}" class="admin-nav-link">🌐 Public Site</a>
+        </nav>
+    </aside>
+
+    <main class="admin-main">
+        <div class="admin-page-header">
+            <div>
+                <div class="breadcrumb">
+                    <a th:href="@{/admin/dashboard}">Dashboard</a> /
+                    <a th:href="@{/admin/series/{id}/seasons(id=${video.id})}" th:text="${video.title}">Series</a> /
+                    <span th:text="${'Season ' + season.seasonNumber}">Season 1</span> /
+                    <span>Episodes</span>
+                </div>
+                <h1 class="admin-page-title">
+                    Episode Manager
+                    <span class="subtitle-label" th:text="${video.title + ' – S' + season.seasonNumber}"></span>
+                </h1>
+            </div>
+            <a th:href="@{/admin/series/{id}/seasons(id=${video.id})}" class="btn btn-ghost">← Seasons</a>
+        </div>
+
+        <div class="admin-two-col">
+            <!-- Add Episode Form -->
+            <div class="admin-form-card">
+                <h2 class="admin-card-title">Add New Episode</h2>
+                <form th:action="@{/admin/seasons/{id}/episodes/add(id=${season.id})}"
+                      th:object="${episodeForm}" method="post" class="admin-form">
+
+                    <div class="form-row">
+                        <div class="form-group form-col-1">
+                            <label class="form-label">Episode # <span class="required">*</span></label>
+                            <input type="number" th:field="*{episodeNumber}" class="form-input"
+                                   min="1" required placeholder="e.g. 1"/>
+                            <span th:if="${#fields.hasErrors('episodeNumber')}"
+                                  th:errors="*{episodeNumber}" class="field-error"></span>
+                        </div>
+                        <div class="form-group form-col-1">
+                            <label class="form-label">Duration (min)</label>
+                            <input type="number" th:field="*{durationMinutes}" class="form-input"
+                                   min="1" placeholder="e.g. 24"/>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Episode Title <span class="required">*</span></label>
+                        <input type="text" th:field="*{title}" class="form-input"
+                               required maxlength="200" placeholder="e.g. To You, in 2000 Years"/>
+                        <span th:if="${#fields.hasErrors('title')}" th:errors="*{title}" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea th:field="*{description}" class="form-textarea"
+                                  rows="3" placeholder="Episode summary…" maxlength="5000"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Video URL <span class="required">*</span></label>
+                        <input type="url" th:field="*{videoUrl}" class="form-input"
+                               required placeholder="https://example.com/ep1.mp4"/>
+                        <span th:if="${#fields.hasErrors('videoUrl')}" th:errors="*{videoUrl}" class="field-error"></span>
+                        <small class="form-hint">MP4, WebM, or HLS (.m3u8) URL</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Thumbnail URL</label>
+                        <input type="url" th:field="*{thumbnailUrl}" class="form-input"
+                               placeholder="https://…"/>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Rating (0–10)</label>
+                        <input type="number" th:field="*{rating}" class="form-input"
+                               step="0.1" min="0" max="10" placeholder="e.g. 9.1"/>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">+ Add Episode</button>
+                </form>
+            </div>
+
+            <!-- Episode List -->
+            <div class="admin-form-card">
+                <h2 class="admin-card-title">
+                    Episodes
+                    <span class="count-badge" th:text="${episodes.size()}">0</span>
+                </h2>
+
+                <div th:if="${episodes.empty}" class="empty-state-small">
+                    <p>No episodes yet. Add the first one.</p>
+                </div>
+
+                <div class="episode-admin-list">
+                    <div th:each="ep : ${episodes}" class="episode-admin-item">
+                        <div class="ep-admin-num" th:text="${ep.episodeNumber}">1</div>
+                        <div class="ep-admin-info">
+                            <span class="ep-admin-title" th:text="${ep.title}">Title</span>
+                            <span th:if="${ep.durationMinutes}" class="ep-admin-dur"
+                                  th:text="${ep.durationMinutes + ' min'}"></span>
+                            <span th:if="${ep.rating != null}" class="ep-admin-rating">
+                                ★ <span th:text="${#numbers.formatDecimal(ep.rating,1,1)}">8</span>
+                            </span>
+                        </div>
+                        <div class="ep-admin-actions">
+                            <form th:action="@{/admin/episodes/delete/{id}(id=${ep.id})}"
+                                  method="post" style="display:inline"
+                                  th:onsubmit="${'return confirm(\'Delete Episode ' + ep.episodeNumber + '?\')'}">
+                                <button type="submit" class="btn btn-danger btn-xs">🗑</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

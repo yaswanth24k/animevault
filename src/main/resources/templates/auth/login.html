@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Login – AnimeVault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body class="auth-body">
+
+<div class="auth-bg">
+    <div class="auth-particles"></div>
+</div>
+
+<div class="auth-container">
+    <a href="/" class="auth-logo">
+        <span class="logo-icon">⛩</span>
+        <span class="logo-text">Anime<span class="logo-accent">Vault</span></span>
+    </a>
+    <h2 class="auth-title">Welcome Back</h2>
+    <p class="auth-subtitle">Sign in to continue your journey</p>
+
+    <div th:if="${errorMessage}" class="flash flash-error">
+        <span>✗</span> <span th:text="${errorMessage}"></span>
+    </div>
+    <div th:if="${successMessage}" class="flash flash-success">
+        <span>✓</span> <span th:text="${successMessage}"></span>
+    </div>
+
+    <form th:action="@{/auth/login}" method="post" class="auth-form">
+        <div class="form-group">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" id="username" name="username" class="form-input"
+                   placeholder="Enter your username" required autofocus/>
+        </div>
+        <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <div class="password-wrap">
+                <input type="password" id="password" name="password" class="form-input"
+                       placeholder="Enter your password" required/>
+                <button type="button" class="toggle-pw" onclick="togglePassword('password')">👁</button>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary auth-submit">Sign In</button>
+    </form>
+
+    <div class="auth-footer">
+        <p>Don't have an account? <a th:href="@{/auth/register}">Register here</a></p>
+        <p><a th:href="@{/}">← Back to Home</a></p>
+    </div>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

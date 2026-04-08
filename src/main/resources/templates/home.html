@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AnimeVault – Stream Anime Online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+<div th:replace="~{fragments/layout :: flash-messages}"></div>
+
+<!-- ═══════════ HERO BANNER ═══════════ -->
+<section class="hero">
+    <div class="hero-bg">
+        <div class="hero-particles"></div>
+        <div class="hero-grid-overlay"></div>
+    </div>
+    <div class="hero-content">
+        <div class="hero-badge">🎌 Stream Anime Free</div>
+        <h1 class="hero-title">
+            Enter the<br/>
+            <span class="hero-title-accent">Anime Vault</span>
+        </h1>
+        <p class="hero-subtitle">
+            Thousands of episodes. Epic movies. Zero limits.<br/>
+            Your next obsession starts here.
+        </p>
+        <div class="hero-actions">
+            <a th:href="@{/browse}" class="btn btn-hero-primary">Browse All Anime</a>
+            <a th:href="@{/browse(type=MOVIE)}" class="btn btn-hero-ghost">Watch Movies</a>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat"><span class="stat-n">∞</span><span class="stat-l">Episodes</span></div>
+            <div class="hero-stat"><span class="stat-n">HD</span><span class="stat-l">Quality</span></div>
+            <div class="hero-stat"><span class="stat-n">Free</span><span class="stat-l">Forever</span></div>
+        </div>
+    </div>
+    <div class="hero-scroll-hint">
+        <span>Scroll</span>
+        <div class="scroll-line"></div>
+    </div>
+</section>
+
+<!-- ═══════════ LATEST SERIES ═══════════ -->
+<section class="section" th:if="${latestAnime != null and !latestAnime.empty}">
+    <div class="section-header">
+        <h2 class="section-title"><span class="title-bar"></span>Latest Series</h2>
+        <a th:href="@{/browse(type=SERIES)}" class="section-more">View All →</a>
+    </div>
+    <div class="anime-grid">
+        <div th:each="v : ${latestAnime}" class="anime-card">
+            <a th:href="@{/watch/series/{id}(id=${v.id})}" class="card-link">
+                <div class="card-thumb">
+                    <img th:if="${v.thumbnailUrl != null and !v.thumbnailUrl.empty}"
+                         th:src="${v.thumbnailUrl}" th:alt="${v.title}"
+                         onerror="this.src='/images/placeholder.svg'"/>
+                    <div th:unless="${v.thumbnailUrl != null and !v.thumbnailUrl.empty}"
+                         class="card-thumb-placeholder">
+                        <span>⛩</span>
+                    </div>
+                    <div class="card-overlay">
+                        <span class="play-icon">▶</span>
+                    </div>
+                    <div class="card-type-badge series">SERIES</div>
+                    <div th:if="${v.rating != null}" class="card-rating">
+                        ★ <span th:text="${#numbers.formatDecimal(v.rating,1,1)}">8.5</span>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3 class="card-title" th:text="${v.title}">Title</h3>
+                    <div class="card-meta">
+                        <span th:if="${v.status}" th:text="${v.status}" class="card-status"></span>
+                        <span th:if="${v.releaseYear}" th:text="${v.releaseYear}" class="card-year"></span>
+                    </div>
+                    <div class="card-genres" th:if="${v.genres != null and !v.genres.empty}">
+                        <span th:each="g, iter : ${v.getGenreArray()}"
+                              th:if="${iter.index < 3}"
+                              th:text="${g.trim()}" class="genre-tag"></span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════ TOP RATED ═══════════ -->
+<section class="section section-dark" th:if="${topRated != null and !topRated.empty}">
+    <div class="section-header">
+        <h2 class="section-title"><span class="title-bar gold"></span>Top Rated</h2>
+        <a th:href="@{/browse(minRating=8)}" class="section-more">View All →</a>
+    </div>
+    <div class="anime-grid">
+        <div th:each="v : ${topRated}" class="anime-card">
+            <a th:href="${v.type.name() == 'MOVIE'} ? @{/watch/movie/{id}(id=${v.id})} : @{/watch/series/{id}(id=${v.id})}"
+               class="card-link">
+                <div class="card-thumb">
+                    <img th:if="${v.thumbnailUrl != null and !v.thumbnailUrl.empty}"
+                         th:src="${v.thumbnailUrl}" th:alt="${v.title}"
+                         onerror="this.src='/images/placeholder.svg'"/>
+                    <div th:unless="${v.thumbnailUrl != null and !v.thumbnailUrl.empty}"
+                         class="card-thumb-placeholder">
+                        <span>⛩</span>
+                    </div>
+                    <div class="card-overlay"><span class="play-icon">▶</span></div>
+                    <div th:class="${'card-type-badge ' + v.type.name().toLowerCase()}"
+                         th:text="${v.type.name()}"></div>
+                    <div th:if="${v.rating != null}" class="card-rating card-rating-gold">
+                        ★ <span th:text="${#numbers.formatDecimal(v.rating,1,1)}">9.0</span>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3 class="card-title" th:text="${v.title}">Title</h3>
+                    <div class="card-genres" th:if="${v.genres != null and !v.genres.empty}">
+                        <span th:each="g, iter : ${v.getGenreArray()}"
+                              th:if="${iter.index < 3}"
+                              th:text="${g.trim()}" class="genre-tag"></span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════ LATEST MOVIES ═══════════ -->
+<section class="section" th:if="${latestMovies != null and !latestMovies.empty}">
+    <div class="section-header">
+        <h2 class="section-title"><span class="title-bar red"></span>Anime Movies</h2>
+        <a th:href="@{/browse(type=MOVIE)}" class="section-more">View All →</a>
+    </div>
+    <div class="anime-grid">
+        <div th:each="v : ${latestMovies}" class="anime-card">
+            <a th:href="@{/watch/movie/{id}(id=${v.id})}" class="card-link">
+                <div class="card-thumb">
+                    <img th:if="${v.thumbnailUrl != null and !v.thumbnailUrl.empty}"
+                         th:src="${v.thumbnailUrl}" th:alt="${v.title}"
+                         onerror="this.src='/images/placeholder.svg'"/>
+                    <div th:unless="${v.thumbnailUrl != null and !v.thumbnailUrl.empty}"
+                         class="card-thumb-placeholder">
+                        <span>🎬</span>
+                    </div>
+                    <div class="card-overlay"><span class="play-icon">▶</span></div>
+                    <div class="card-type-badge movie">MOVIE</div>
+                    <div th:if="${v.rating != null}" class="card-rating">
+                        ★ <span th:text="${#numbers.formatDecimal(v.rating,1,1)}">8.0</span>
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3 class="card-title" th:text="${v.title}">Title</h3>
+                    <div class="card-genres" th:if="${v.genres != null and !v.genres.empty}">
+                        <span th:each="g, iter : ${v.getGenreArray()}"
+                              th:if="${iter.index < 3}"
+                              th:text="${g.trim()}" class="genre-tag"></span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════ EMPTY STATE ═══════════ -->
+<section class="section"
+         th:if="${(latestAnime == null or latestAnime.empty) and (latestMovies == null or latestMovies.empty)}">
+    <div class="empty-hero">
+        <div class="empty-icon">⛩</div>
+        <h2>The vault is empty…</h2>
+        <p>No anime uploaded yet.</p>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/upload}" class="btn btn-primary">Upload First Anime</a>
+        <p sec:authorize="isAnonymous()" class="empty-hint">Check back soon!</p>
+    </div>
+</section>
+
+<!-- ═══════════ GENRE STRIP ═══════════ -->
+<section class="genre-strip">
+    <div class="genre-strip-inner">
+        <h3 class="genre-strip-title">Browse by Genre</h3>
+        <div class="genre-chips">
+            <a th:each="g : ${genres}"
+               th:href="@{/browse(genre=${g})}"
+               th:text="${g}"
+               class="genre-chip"></a>
+        </div>
+    </div>
+</section>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

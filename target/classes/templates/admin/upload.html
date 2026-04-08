@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Upload Anime – AnimeVault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+<div th:replace="~{fragments/layout :: flash-messages}"></div>
+
+<div class="admin-layout">
+    <aside class="admin-sidebar">
+        <div class="admin-sidebar-header">
+            <span class="admin-sidebar-icon">⚔</span>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="admin-nav">
+            <a th:href="@{/admin/dashboard}" class="admin-nav-link">📊 Dashboard</a>
+            <a th:href="@{/admin/upload}" class="admin-nav-link active">⬆ Upload Anime</a>
+            <a th:href="@{/browse}" class="admin-nav-link">🌐 Public Site</a>
+        </nav>
+    </aside>
+
+    <main class="admin-main">
+        <div class="admin-page-header">
+            <h1 class="admin-page-title">Upload Anime / Movie</h1>
+            <a th:href="@{/admin/dashboard}" class="btn btn-ghost">← Back</a>
+        </div>
+
+        <div class="admin-form-card">
+            <form th:action="@{/admin/upload}" th:object="${videoForm}" method="post"
+                  class="admin-form" id="uploadForm">
+
+                <!-- Type selector -->
+                <div class="type-selector">
+                    <label class="type-option" id="labelSeries">
+                        <input type="radio" th:field="*{type}" value="SERIES" name="type"
+                               onchange="onTypeChange(this.value)"/>
+                        <span class="type-icon">🎌</span>
+                        <span class="type-label">Anime Series</span>
+                        <span class="type-desc">Multiple episodes &amp; seasons</span>
+                    </label>
+                    <label class="type-option" id="labelMovie">
+                        <input type="radio" th:field="*{type}" value="MOVIE" name="type"
+                               onchange="onTypeChange(this.value)"/>
+                        <span class="type-icon">🎬</span>
+                        <span class="type-label">Anime Movie</span>
+                        <span class="type-desc">Single video file</span>
+                    </label>
+                </div>
+                <span th:if="${#fields.hasErrors('type')}" th:errors="*{type}" class="field-error"></span>
+
+                <div th:if="${errorMessage}" class="flash flash-error">
+                    <span>✗</span> <span th:text="${errorMessage}"></span>
+                </div>
+
+                <!-- Basic Info -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Basic Information</h3>
+                    <div class="form-row">
+                        <div class="form-group form-col-2">
+                            <label class="form-label">Title <span class="required">*</span></label>
+                            <input type="text" th:field="*{title}" class="form-input"
+                                   placeholder="e.g. Attack on Titan" required maxlength="200"/>
+                            <span th:if="${#fields.hasErrors('title')}" th:errors="*{title}" class="field-error"></span>
+                        </div>
+                        <div class="form-group form-col-1">
+                            <label class="form-label">Rating (0–10)</label>
+                            <input type="number" th:field="*{rating}" class="form-input"
+                                   step="0.1" min="0" max="10" placeholder="e.g. 8.5"/>
+                            <span th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}" class="field-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea th:field="*{description}" class="form-textarea"
+                                  rows="4" maxlength="5000"
+                                  placeholder="Synopsis, plot summary…"></textarea>
+                        <span th:if="${#fields.hasErrors('description')}" th:errors="*{description}" class="field-error"></span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group form-col-1">
+                            <label class="form-label">Release Year</label>
+                            <input type="number" th:field="*{releaseYear}" class="form-input"
+                                   min="1960" max="2030" placeholder="e.g. 2024"/>
+                        </div>
+                        <div class="form-group form-col-1">
+                            <label class="form-label">Studio</label>
+                            <input type="text" th:field="*{studio}" class="form-input"
+                                   placeholder="e.g. MAPPA" maxlength="100"/>
+                        </div>
+                        <div class="form-group form-col-1">
+                            <label class="form-label">Status</label>
+                            <select th:field="*{status}" class="form-input">
+                                <option value="">Select…</option>
+                                <option value="ONGOING">Ongoing</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="UPCOMING">Upcoming</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Genres -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Genre(s)</h3>
+                    <div class="genre-checkboxes">
+                        <label th:each="g : ${genres}" class="genre-check">
+                            <input type="checkbox"
+                                   th:value="${g}"
+                                   th:checked="${videoForm.genres != null and videoForm.genres.contains(g)}"
+                                   class="genre-cb" name="genreChecks"/>
+                            <span th:text="${g}">Genre</span>
+                        </label>
+                    </div>
+                    <input type="hidden" th:field="*{genres}" id="genresHidden"/>
+                    <small class="form-hint">Selected genres are saved automatically</small>
+                </div>
+
+                <!-- Media URLs -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Media</h3>
+                    <div class="form-group">
+                        <label class="form-label">Thumbnail URL</label>
+                        <input type="url" th:field="*{thumbnailUrl}" class="form-input"
+                               placeholder="https://example.com/thumbnail.jpg"
+                               oninput="previewThumbnail(this.value)"/>
+                        <div id="thumbPreview" class="thumb-preview" style="display:none">
+                            <img id="thumbImg" src="" alt="Preview"/>
+                        </div>
+                    </div>
+
+                    <!-- Video URL only for movies -->
+                    <div id="videoUrlGroup" class="form-group" style="display:none">
+                        <label class="form-label">Video URL <span class="required">*</span></label>
+                        <input type="url" th:field="*{videoUrl}" class="form-input"
+                               placeholder="https://example.com/movie.mp4 or HLS stream URL"
+                               id="videoUrlInput"/>
+                        <span th:if="${#fields.hasErrors('videoUrl')}" th:errors="*{videoUrl}" class="field-error"></span>
+                        <small class="form-hint">Supports MP4, WebM, or HLS (.m3u8) stream URLs</small>
+                    </div>
+
+                    <div id="seriesNote" class="info-box" style="display:none">
+                        <span>📂</span>
+                        After saving the series, you'll be taken to the Season Manager to add seasons and episodes.
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <span id="submitLabel">Upload Anime</span>
+                    </button>
+                    <a th:href="@{/admin/dashboard}" class="btn btn-ghost btn-lg">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+<script>
+    function onTypeChange(type) {
+        const movieGroup = document.getElementById('videoUrlGroup');
+        const seriesNote = document.getElementById('seriesNote');
+        const submitLabel = document.getElementById('submitLabel');
+        const labelSeries = document.getElementById('labelSeries');
+        const labelMovie = document.getElementById('labelMovie');
+
+        if (type === 'MOVIE') {
+            movieGroup.style.display = 'block';
+            seriesNote.style.display = 'none';
+            submitLabel.textContent = 'Upload Movie';
+            labelMovie.classList.add('selected');
+            labelSeries.classList.remove('selected');
+        } else {
+            movieGroup.style.display = 'none';
+            seriesNote.style.display = 'flex';
+            submitLabel.textContent = 'Create Series';
+            labelSeries.classList.add('selected');
+            labelMovie.classList.remove('selected');
+        }
+    }
+
+    function previewThumbnail(url) {
+        const preview = document.getElementById('thumbPreview');
+        const img = document.getElementById('thumbImg');
+        if (url && url.startsWith('http')) {
+            img.src = url;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    // Sync genre checkboxes → hidden field
+    function syncGenres() {
+        const checked = [...document.querySelectorAll('.genre-cb:checked')].map(cb => cb.value);
+        document.getElementById('genresHidden').value = checked.join(',');
+    }
+    document.querySelectorAll('.genre-cb').forEach(cb => cb.addEventListener('change', syncGenres));
+    syncGenres();
+
+    // Init type state
+    const selected = document.querySelector('input[name="type"]:checked');
+    if (selected) onTypeChange(selected.value);
+</script>
+</body>
+</html>

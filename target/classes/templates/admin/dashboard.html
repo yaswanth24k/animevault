@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Admin Dashboard – AnimeVault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+<div th:replace="~{fragments/layout :: flash-messages}"></div>
+
+<div class="admin-layout">
+    <!-- Admin Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="admin-sidebar-header">
+            <span class="admin-sidebar-icon">⚔</span>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="admin-nav">
+            <a th:href="@{/admin/dashboard}" class="admin-nav-link active">📊 Dashboard</a>
+            <a th:href="@{/admin/upload}" class="admin-nav-link">⬆ Upload Anime</a>
+            <a th:href="@{/browse}" class="admin-nav-link">🌐 Public Site</a>
+        </nav>
+    </aside>
+
+    <!-- Admin Main -->
+    <main class="admin-main">
+        <div class="admin-page-header">
+            <h1 class="admin-page-title">Dashboard</h1>
+            <a th:href="@{/admin/upload}" class="btn btn-primary">+ Upload Anime</a>
+        </div>
+
+        <!-- Stats cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-icon">📺</div>
+                <div class="stat-card-body">
+                    <div class="stat-card-num" th:text="${totalCount}">0</div>
+                    <div class="stat-card-label">Total Titles</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">🎌</div>
+                <div class="stat-card-body">
+                    <div class="stat-card-num" th:text="${seriesCount}">0</div>
+                    <div class="stat-card-label">Series</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">🎬</div>
+                <div class="stat-card-body">
+                    <div class="stat-card-num" th:text="${movieCount}">0</div>
+                    <div class="stat-card-label">Movies</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video List -->
+        <div class="admin-section">
+            <h2 class="admin-section-title">All Titles</h2>
+
+            <div th:if="${allVideos.empty}" class="empty-state">
+                <div class="empty-icon">📭</div>
+                <h3>Nothing uploaded yet</h3>
+                <a th:href="@{/admin/upload}" class="btn btn-primary">Upload First Anime</a>
+            </div>
+
+            <div th:unless="${allVideos.empty}" class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Thumbnail</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Genre(s)</th>
+                            <th>Rating</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="v : ${allVideos}">
+                            <td>
+                                <img th:if="${v.thumbnailUrl != null and !v.thumbnailUrl.empty}"
+                                     th:src="${v.thumbnailUrl}" th:alt="${v.title}"
+                                     class="table-thumb"
+                                     onerror="this.src='/images/placeholder.svg'"/>
+                                <div th:unless="${v.thumbnailUrl != null and !v.thumbnailUrl.empty}"
+                                     class="table-thumb-placeholder">⛩</div>
+                            </td>
+                            <td>
+                                <strong th:text="${v.title}">Title</strong>
+                                <div th:if="${v.studio}" class="table-sub" th:text="${v.studio}"></div>
+                            </td>
+                            <td>
+                                <span th:class="${'badge badge-' + v.type.name().toLowerCase()}"
+                                      th:text="${v.type.name()}">TYPE</span>
+                            </td>
+                            <td>
+                                <span class="table-genres" th:text="${v.genres ?: '—'}"></span>
+                            </td>
+                            <td>
+                                <span th:if="${v.rating != null}"
+                                      th:text="${'★ ' + #numbers.formatDecimal(v.rating,1,1)}"></span>
+                                <span th:unless="${v.rating != null}">—</span>
+                            </td>
+                            <td>
+                                <span th:text="${v.status ?: '—'}"></span>
+                            </td>
+                            <td class="table-actions">
+                                <!-- View -->
+                                <a th:href="${v.type.name() == 'MOVIE'} ? @{/watch/movie/{id}(id=${v.id})} : @{/watch/series/{id}(id=${v.id})}"
+                                   class="btn btn-ghost btn-xs" title="View">▶</a>
+                                <!-- Manage Seasons (series only) -->
+                                <a th:if="${v.type.name() == 'SERIES'}"
+                                   th:href="@{/admin/series/{id}/seasons(id=${v.id})}"
+                                   class="btn btn-admin btn-xs" title="Seasons">📂</a>
+                                <!-- Edit -->
+                                <a th:href="@{/admin/edit/{id}(id=${v.id})}"
+                                   class="btn btn-admin btn-xs" title="Edit">✎</a>
+                                <!-- Delete -->
+                                <form th:action="@{/admin/delete/{id}(id=${v.id})}" method="post"
+                                      style="display:inline"
+                                      onsubmit="return confirm('Delete ' + '[[${v.title}]]' + '?')">
+                                    <button type="submit" class="btn btn-danger btn-xs" title="Delete">🗑</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${'Edit: ' + video.title + ' – AnimeVault'}">Edit – AnimeVault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+<div th:replace="~{fragments/layout :: flash-messages}"></div>
+
+<div class="admin-layout">
+    <aside class="admin-sidebar">
+        <div class="admin-sidebar-header">
+            <span class="admin-sidebar-icon">⚔</span>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="admin-nav">
+            <a th:href="@{/admin/dashboard}" class="admin-nav-link">📊 Dashboard</a>
+            <a th:href="@{/admin/upload}" class="admin-nav-link">⬆ Upload Anime</a>
+            <a th:href="@{/browse}" class="admin-nav-link">🌐 Public Site</a>
+        </nav>
+    </aside>
+
+    <main class="admin-main">
+        <div class="admin-page-header">
+            <h1 class="admin-page-title">Edit: <span th:text="${video.title}">Title</span></h1>
+            <a th:href="@{/admin/dashboard}" class="btn btn-ghost">← Dashboard</a>
+        </div>
+
+        <div class="admin-form-card">
+            <form th:action="@{/admin/edit/{id}(id=${video.id})}" th:object="${videoForm}"
+                  method="post" class="admin-form">
+
+                <div th:if="${errorMessage}" class="flash flash-error">
+                    <span>✗</span> <span th:text="${errorMessage}"></span>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="form-section-title">Basic Information</h3>
+                    <div class="form-group">
+                        <label class="form-label">Type</label>
+                        <div class="readonly-badge">
+                            <span th:class="${'badge badge-' + video.type.name().toLowerCase()}"
+                                  th:text="${video.type.name()}">TYPE</span>
+                            <small>(Type cannot be changed after creation)</small>
+                        </div>
+                        <input type="hidden" th:field="*{type}"/>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group form-col-2">
+                            <label class="form-label">Title <span class="required">*</span></label>
+                            <input type="text" th:field="*{title}" class="form-input"
+                                   required maxlength="200"/>
+                            <span th:if="${#fields.hasErrors('title')}" th:errors="*{title}" class="field-error"></span>
+                        </div>
+                        <div class="form-group form-col-1">
+                            <label class="form-label">Rating (0–10)</label>
+                            <input type="number" th:field="*{rating}" class="form-input"
+                                   step="0.1" min="0" max="10"/>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea th:field="*{description}" class="form-textarea" rows="5" maxlength="5000"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group form-col-1">
+                            <label class="form-label">Release Year</label>
+                            <input type="number" th:field="*{releaseYear}" class="form-input"
+                                   min="1960" max="2030"/>
+                        </div>
+                        <div class="form-group form-col-1">
+                            <label class="form-label">Studio</label>
+                            <input type="text" th:field="*{studio}" class="form-input" maxlength="100"/>
+                        </div>
+                        <div class="form-group form-col-1">
+                            <label class="form-label">Status</label>
+                            <select th:field="*{status}" class="form-input">
+                                <option value="">Select…</option>
+                                <option value="ONGOING">Ongoing</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="UPCOMING">Upcoming</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="form-section-title">Genre(s)</h3>
+                    <div class="genre-checkboxes">
+                        <label th:each="g : ${genres}" class="genre-check">
+                            <input type="checkbox"
+                                   th:value="${g}"
+                                   th:checked="${videoForm.genres != null and videoForm.genres.contains(g)}"
+                                   class="genre-cb" name="genreChecks"/>
+                            <span th:text="${g}">Genre</span>
+                        </label>
+                    </div>
+                    <input type="hidden" th:field="*{genres}" id="genresHidden"/>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="form-section-title">Media</h3>
+                    <div class="form-group">
+                        <label class="form-label">Thumbnail URL</label>
+                        <input type="url" th:field="*{thumbnailUrl}" class="form-input"
+                               oninput="previewThumbnail(this.value)"/>
+                        <div id="thumbPreview"
+                             th:style="${videoForm.thumbnailUrl != null and !videoForm.thumbnailUrl.empty} ? 'display:block' : 'display:none'"
+                             class="thumb-preview">
+                            <img id="thumbImg" th:src="${videoForm.thumbnailUrl}" alt="Preview"/>
+                        </div>
+                    </div>
+                    <div class="form-group" th:if="${video.type.name() == 'MOVIE'}">
+                        <label class="form-label">Video URL</label>
+                        <input type="url" th:field="*{videoUrl}" class="form-input"/>
+                        <small class="form-hint">MP4, WebM, or HLS stream URL</small>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">Save Changes</button>
+                    <a th:if="${video.type.name() == 'SERIES'}"
+                       th:href="@{/admin/series/{id}/seasons(id=${video.id})}"
+                       class="btn btn-admin btn-lg">📂 Manage Seasons</a>
+                    <a th:href="@{/admin/dashboard}" class="btn btn-ghost btn-lg">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+<script>
+    function previewThumbnail(url) {
+        const preview = document.getElementById('thumbPreview');
+        const img = document.getElementById('thumbImg');
+        if (url && url.startsWith('http')) {
+            img.src = url;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+    function syncGenres() {
+        const checked = [...document.querySelectorAll('.genre-cb:checked')].map(cb => cb.value);
+        document.getElementById('genresHidden').value = checked.join(',');
+    }
+    document.querySelectorAll('.genre-cb').forEach(cb => cb.addEventListener('change', syncGenres));
+    syncGenres();
+</script>
+</body>
+</html>

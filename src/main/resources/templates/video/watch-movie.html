@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${video.title + ' – AnimeVault'}">Watch – AnimeVault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+<div th:replace="~{fragments/layout :: flash-messages}"></div>
+
+<div class="watch-layout">
+    <!-- Video Player Area -->
+    <div class="watch-main">
+        <div class="video-player-wrap">
+            <video th:if="${video.videoUrl != null and !video.videoUrl.empty}"
+                   class="video-player"
+                   controls
+                   preload="metadata"
+                   th:poster="${video.thumbnailUrl}">
+                <source th:src="${video.videoUrl}" type="video/mp4"/>
+                <source th:src="${video.videoUrl}" type="video/webm"/>
+                Your browser does not support HTML5 video.
+            </video>
+            <div th:unless="${video.videoUrl != null and !video.videoUrl.empty}" class="video-no-src">
+                <span>🎬</span>
+                <p>Video URL not configured yet.</p>
+            </div>
+        </div>
+
+        <!-- Video Info -->
+        <div class="watch-info">
+            <div class="watch-info-top">
+                <div>
+                    <div class="watch-type-badge movie">MOVIE</div>
+                    <h1 class="watch-title" th:text="${video.title}">Title</h1>
+                    <div class="watch-meta">
+                        <span th:if="${video.rating != null}" class="watch-rating">
+                            ★ <span th:text="${#numbers.formatDecimal(video.rating,1,1)}">8.5</span>/10
+                        </span>
+                        <span th:if="${video.releaseYear}" th:text="${video.releaseYear}"></span>
+                        <span th:if="${video.studio}" th:text="${video.studio}"></span>
+                        <span th:if="${video.status}" th:text="${video.status}" class="status-badge"></span>
+                    </div>
+                </div>
+                <div sec:authorize="hasRole('ADMIN')" class="admin-controls">
+                    <a th:href="@{/admin/edit/{id}(id=${video.id})}" class="btn btn-admin btn-sm">✎ Edit</a>
+                    <form th:action="@{/admin/delete/{id}(id=${video.id})}" method="post"
+                          onsubmit="return confirm('Delete this movie?')">
+                        <button type="submit" class="btn btn-danger btn-sm">🗑 Delete</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="watch-genres" th:if="${video.genres != null and !video.genres.empty}">
+                <span th:each="g : ${video.getGenreArray()}"
+                      th:text="${g.trim()}" class="genre-tag"></span>
+            </div>
+
+            <p class="watch-desc" th:if="${video.description}" th:text="${video.description}"></p>
+        </div>
+
+        <!-- Comments -->
+        <div class="comments-section">
+            <h2 class="comments-title">
+                Comments
+                <span class="comment-count" th:text="${'(' + commentCount + ')'}"></span>
+            </h2>
+
+            <!-- Post comment form -->
+            <form th:action="@{/comments/post}" method="post" class="comment-form">
+                <input type="hidden" name="videoId" th:value="${video.id}"/>
+                <input type="hidden" name="redirectUrl" th:value="${'/watch/movie/' + video.id}"/>
+                <div class="comment-input-wrap">
+                    <textarea name="content" placeholder="Share your thoughts…"
+                              maxlength="2000" class="comment-textarea" rows="3"
+                              required></textarea>
+                    <button type="submit" class="btn btn-primary comment-submit">Post</button>
+                </div>
+                <p th:unless="${loggedIn}" class="comment-anon-note">
+                    💬 Posting as <strong>Anonymous</strong>.
+                    <a th:href="@{/auth/login}">Login</a> to post with your username.
+                </p>
+            </form>
+
+            <!-- Comment list -->
+            <div class="comment-list">
+                <div th:each="c : ${comments}" class="comment-item">
+                    <div class="comment-avatar" th:text="${c.displayName.substring(0,1).toUpperCase()}">A</div>
+                    <div class="comment-body">
+                        <div class="comment-header">
+                            <span class="comment-author" th:text="${c.displayName}">User</span>
+                            <span class="comment-time"
+                                  th:text="${#temporals.format(c.timestamp, 'MMM dd, yyyy')}">Date</span>
+                            <form sec:authorize="hasRole('ADMIN')"
+                                  th:action="@{/admin/comments/delete/{id}(id=${c.id})}" method="post"
+                                  style="display:inline;">
+                                <input type="hidden" name="redirectUrl" th:value="${'/watch/movie/' + video.id}"/>
+                                <button type="submit" class="comment-delete-btn"
+                                        onclick="return confirm('Delete this comment?')">×</button>
+                            </form>
+                        </div>
+                        <p class="comment-content" th:text="${c.content}">Comment text</p>
+                    </div>
+                </div>
+                <div th:if="${comments.empty}" class="no-comments">
+                    <p>No comments yet. Be the first!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="watch-sidebar">
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">Movie Info</h3>
+            <div class="info-list">
+                <div class="info-row" th:if="${video.studio}">
+                    <span class="info-label">Studio</span>
+                    <span class="info-value" th:text="${video.studio}"></span>
+                </div>
+                <div class="info-row" th:if="${video.releaseYear}">
+                    <span class="info-label">Year</span>
+                    <span class="info-value" th:text="${video.releaseYear}"></span>
+                </div>
+                <div class="info-row" th:if="${video.rating}">
+                    <span class="info-label">Rating</span>
+                    <span class="info-value">★ <span th:text="${#numbers.formatDecimal(video.rating,1,1)}"></span>/10</span>
+                </div>
+                <div class="info-row" th:if="${video.genres}">
+                    <span class="info-label">Genres</span>
+                    <span class="info-value" th:text="${video.genres}"></span>
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

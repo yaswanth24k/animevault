@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>403 – Access Denied – AnimeVault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/layout :: navbar}"></div>
+<div class="error-page">
+    <div class="error-code error-code-red">403</div>
+    <div class="error-emoji">⚔</div>
+    <h1 class="error-title">Access Denied</h1>
+    <p class="error-desc">You don't have permission to enter this realm. Admin powers required.</p>
+    <div class="error-actions">
+        <a href="/" class="btn btn-primary">Go Home</a>
+        <a href="/auth/login" class="btn btn-ghost">Login</a>
+    </div>
+</div>
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

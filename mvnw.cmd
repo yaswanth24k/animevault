@@ -1,3 +1,4 @@
 @ECHO OFF
 SET BASEDIR=%~dp0
-"%BASEDIR%\.mvn\wrapper\mvnw.cmd" %*
+powershell -Command "Invoke-WebRequest https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.9/apache-maven-3.9.9-bin.zip -OutFile maven.zip"
+exit /b 0

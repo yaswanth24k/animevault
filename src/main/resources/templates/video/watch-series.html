@@ -22,7 +22,7 @@
         <!-- Video Player -->
         <div class="video-player-wrap">
             <iframe th:if="${currentEpisode != null and currentEpisode.videoUrl != null}"
-                    th:src="${currentEpisode.videoUrl}"
+                    th:attr="src=${currentEpisode.videoUrl}"
                     class="video-player"
                     width="100%"
                     height="600"

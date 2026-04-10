@@ -20,7 +20,7 @@
     <div class="watch-main">
         <div class="video-player-wrap">
             <iframe th:if="${video.videoUrl != null and !video.videoUrl.empty}"
-                    th:src="${video.videoUrl}"
+                    th:attr="src=${video.videoUrl}"
                     class="video-player"
                     width="100%"
                     height="600"

@@ -21,15 +21,14 @@
 
         <!-- Video Player -->
         <div class="video-player-wrap">
-            <video th:if="${currentEpisode != null and currentEpisode.videoUrl != null}"
-                   class="video-player"
-                   controls
-                   preload="metadata"
-                   th:poster="${currentEpisode.thumbnailUrl != null} ? ${currentEpisode.thumbnailUrl} : ${video.thumbnailUrl}">
-                <source th:src="${currentEpisode.videoUrl}" type="video/mp4"/>
-                <source th:src="${currentEpisode.videoUrl}" type="video/webm"/>
-                Your browser does not support HTML5 video.
-            </video>
+            <iframe th:if="${currentEpisode != null and currentEpisode.videoUrl != null}"
+                    th:src="${currentEpisode.videoUrl}"
+                    class="video-player"
+                    width="100%"
+                    height="600"
+                    frameborder="0"
+                    allowfullscreen>
+            </iframe>
             <div th:unless="${currentEpisode != null and currentEpisode.videoUrl != null}"
                  class="video-no-src">
                 <span>📺</span>
